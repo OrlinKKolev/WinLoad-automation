@@ -28,13 +28,15 @@ import openpyxl
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
-from tools.project_root import PROJECT_ROOT
-from tools.utils import parse_number
 
+from tools.utils import parse_number
+from tools.project_root import PROJECT_ROOT
 # ── Paths ─────────────────────────────────────────────────────────────────────
-SOURCE_EXCEL   = PROJECT_ROOT / "data" / "schemes_output.xlsx"
-TEMPLATE_EXCEL = PROJECT_ROOT / "data" / "STxxxx_Wind load check.xlsx"
-REPORTS_DIR    = PROJECT_ROOT / "data" / "reports"
+DATA_ROOT = PROJECT_ROOT.parent / "data" 
+
+SOURCE_EXCEL   = DATA_ROOT / "schemes_output.xlsx"
+TEMPLATE_EXCEL = DATA_ROOT / "STxxxx_Wind load check.xlsx"
+REPORTS_DIR    = DATA_ROOT / "reports"
 
 # ── Cell mapping ──────────────────────────────────────────────────────────────
 # Each entry: (cell_address, column_name_in_source, fixed_value_or_None)

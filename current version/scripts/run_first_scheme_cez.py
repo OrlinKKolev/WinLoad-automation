@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 
-project_root = Path(__file__).resolve().parent.parent
+project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from tools.utils import parse_number

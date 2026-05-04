@@ -83,7 +83,7 @@ def build_json_from_row(row: pd.Series) -> dict:
 
 
 def main() -> None:
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
 
     excel_path = project_root / "data" / EXCEL_NAME
     temp_dir = project_root / "data" / "temp"
