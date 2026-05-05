@@ -90,7 +90,35 @@ def populate_scheme(row: dict, template_path: Path, output_path: Path) -> None:
     wb.save(str(output_path))
     print(f"  Saved: {output_path}")
 
+def export_active_sheet_page1_to_pdf(excel_path: Path, pdf_path: Path) -> None:
+    import win32com.client
 
+    excel = win32com.client.Dispatch("Excel.Application")
+    excel.Visible = False
+    excel.DisplayAlerts = False
+    excel.ScreenUpdating = False
+
+    wb = None
+    try:
+        wb = excel.Workbooks.Open(str(excel_path.resolve()))
+        ws = wb.ActiveSheet
+
+        pdf_path.parent.mkdir(parents=True, exist_ok=True)
+
+        ws.ExportAsFixedFormat(
+            Type=0,
+            Filename=str(pdf_path.resolve()),
+            Quality=0,
+            IncludeDocProperties=True,
+            IgnorePrintAreas=False,
+            From=1,
+            To=1,
+            OpenAfterPublish=False,
+        )
+    finally:
+        if wb is not None:
+            wb.Close(SaveChanges=False)
+        excel.Quit()
 def main() -> None:
     import pandas as pd
 
@@ -122,9 +150,11 @@ def main() -> None:
 
         print(f"[{scheme_id}] Populating wind check Excel...")
         output_path = REPORTS_DIR / f"scheme_{scheme_id}_Wind_load_check.xlsx"
+        pdf_path = REPORTS_DIR / f"scheme_{scheme_id}_Wind_load_check.pdf"
 
         try:
             populate_scheme(row.to_dict(), TEMPLATE_EXCEL, output_path)
+            export_active_sheet_page1_to_pdf(output_path, pdf_path)
             print(f"[{scheme_id}] Done.")
         except Exception as e:
             print(f"[{scheme_id}] ERROR: {e}")
@@ -135,3 +165,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
