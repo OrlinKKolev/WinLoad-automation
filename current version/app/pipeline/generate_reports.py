@@ -2,16 +2,14 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-import shutil
-
-import openpyxl
 
 project_root = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 import pandas as pd
 
-from app.utils.numbers import parse_number
+from app.integrations.excel.excel_pdf_export import export_active_sheet_page1_to_pdf
+from app.integrations.excel.wind_check_template import populate_wind_check_template
 
 
 DATA_ROOT = project_root / "data"
@@ -29,61 +27,6 @@ CELL_MAP = [
     ("P26", "ce_z", None),
     ("P27", None, 1.0),
 ]
-
-
-def populate_scheme(row: dict, template_path: Path, output_path: Path) -> None:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(template_path, output_path)
-
-    wb = openpyxl.load_workbook(output_path)
-    ws = wb.active
-
-    ws.protection.sheet = False
-
-    for cell_addr, col_name, fixed_value in CELL_MAP:
-        if fixed_value is not None:
-            ws[cell_addr] = fixed_value
-        else:
-            raw = row.get(col_name)
-            if raw is None:
-                raise ValueError(f"Column '{col_name}' not found in source row")
-            ws[cell_addr] = parse_number(raw)
-
-    ws.protection.sheet = False
-    wb.save(str(output_path))
-    print(f"  Saved: {output_path}")
-
-
-def export_active_sheet_page1_to_pdf(excel_path: Path, pdf_path: Path) -> None:
-    import win32com.client
-
-    excel = win32com.client.Dispatch("Excel.Application")
-    excel.Visible = False
-    excel.DisplayAlerts = False
-    excel.ScreenUpdating = False
-
-    wb = None
-    try:
-        wb = excel.Workbooks.Open(str(excel_path.resolve()))
-        ws = wb.ActiveSheet
-
-        pdf_path.parent.mkdir(parents=True, exist_ok=True)
-
-        ws.ExportAsFixedFormat(
-            Type=0,
-            Filename=str(pdf_path.resolve()),
-            Quality=0,
-            IncludeDocProperties=True,
-            IgnorePrintAreas=False,
-            From=1,
-            To=1,
-            OpenAfterPublish=False,
-        )
-    finally:
-        if wb is not None:
-            wb.Close(SaveChanges=False)
-        excel.Quit()
-
 
 def main() -> None:
     if not SOURCE_EXCEL.exists():
@@ -113,7 +56,7 @@ def main() -> None:
         pdf_path = REPORTS_DIR / f"scheme_{scheme_id}_Wind_load_check.pdf"
 
         try:
-            populate_scheme(row.to_dict(), TEMPLATE_EXCEL, output_path)
+            populate_wind_check_template(row.to_dict(), TEMPLATE_EXCEL, output_path)
             export_active_sheet_page1_to_pdf(output_path, pdf_path)
             print(f"[{scheme_id}] Done.")
         except Exception as e:
