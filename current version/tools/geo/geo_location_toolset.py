@@ -1,10 +1,11 @@
 """Geolocation and site-parameter utilities for Wind Calc Auto.
 
 Public functions:
-- get_lat_lon_from_postcode(postcode)  : postcode → (lat, lon)
-- get_site_geo(lat, lon)               : lat/lon → SiteGeoResult (postcode, OS grid, city, country)
-- get_distance_to_sea_km(lat, lon)     : lat/lon → km to coast via Doogal
-- get_elevation_m(lat, lon)            : lat/lon → elevation in metres
+- get_lat_lon_from_postcode(postcode)      : postcode → (lat, lon)
+- get_global_location_from_lat_lon(lat, lon): lat/lon → (city, country_code, country)
+- get_site_geo(lat, lon)                   : lat/lon → SiteGeoResult (postcode, OS grid, city, country)
+- get_distance_to_sea_km(lat, lon)         : lat/lon → km to coast via Doogal
+- get_elevation_m(lat, lon)                : lat/lon → elevation in metres
 """
 
 from __future__ import annotations
@@ -38,6 +39,34 @@ def get_lat_lon_from_postcode(postcode: str) -> Tuple[float, float]:
     res = data["result"]
     return float(res["latitude"]), float(res["longitude"])
 
+def get_global_location_from_lat_lon(lat: float, lon: float) -> tuple[str, str, str]:
+    """Return (city, country_code, country) from coordinates using BigDataCloud."""
+
+    url = "https://api.bigdatacloud.net/data/reverse-geocode-client"
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "localityLanguage": "en",
+    }
+
+    r = requests.get(url, params=params, timeout=15)
+    r.raise_for_status()
+    data = r.json()
+
+    city = (
+        data.get("city")
+        or data.get("locality")
+        or data.get("principalSubdivision")
+        or ""
+    ).strip()
+
+    country = (data.get("countryName") or "").strip()
+    country_code = (data.get("countryCode") or "").strip().upper()
+
+    if not country_code:
+        raise RuntimeError(f"Could not determine country for ({lat}, {lon})")
+
+    return city, country_code, country
 
 def get_site_geo(lat: float, lon: float, radius_m: int = 500) -> SiteGeoResult:
     """Single postcodes.io call returning full postcode, OS easting/northing,
