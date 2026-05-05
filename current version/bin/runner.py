@@ -1,6 +1,6 @@
 """Runner — executes the full wind automation pipeline:
-1. run_first_scheme_cez  : fetches geodata, runs website automation, populates wind_example.xlsx
-2. populate_wind_check_excel : writes results into the Wind Check Excel template
+1. process_schemes   : reads input, resolves geo, routes UK/EU, writes output Excel
+2. generate_reports  : fills Wind Check workbooks and exports PDFs
 """
 
 from __future__ import annotations
@@ -15,11 +15,11 @@ sys.path.insert(0, str(project_root))
 
 def main() -> None:
     print("=" * 60)
-    print("STEP 1: Running run_first_scheme_cez...")
+    print("STEP 1: Processing schemes...")
     print("=" * 60)
     try:
-        from scripts.run_first_scheme_cez import main as run_schemes
-        run_schemes()
+        from app.pipeline.process_schemes import main as process_schemes
+        process_schemes()
         print("STEP 1: Done.\n")
     except Exception:
         print("STEP 1: FAILED.")
@@ -27,11 +27,11 @@ def main() -> None:
         sys.exit(1)
 
     print("=" * 60)
-    print("STEP 2: Running populate_wind_check_excel...")
+    print("STEP 2: Generating reports...")
     print("=" * 60)
     try:
-        from scripts.populate_wind_check_excel import main as populate_excel
-        populate_excel()
+        from app.pipeline.generate_reports import main as generate_reports
+        generate_reports()
         print("STEP 2: Done.\n")
     except Exception:
         print("STEP 2: FAILED.")
