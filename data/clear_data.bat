@@ -12,8 +12,8 @@ setlocal enabledelayedexpansion
 ::
 ::  DELETES:
 ::    schemes_output.xlsx           (generated output)
-::    reports\*                     (generated reports)
-::    temp\*                        (temporary JSON files)
+::    reports\*                    (generated reports)
+::    temp\*                       (temporary JSON files)
 :: ============================================================
 
 cd /d "%~dp0"
@@ -31,7 +31,6 @@ echo.
 set /p CONFIRM=Are you sure? (Y/N): 
 if /i not "%CONFIRM%"=="Y" (
     echo Cancelled.
-    pause
     exit /b 0
 )
 
@@ -45,7 +44,7 @@ if exist "schemes_output.xlsx" (
     echo [SKIPPED]  schemes_output.xlsx (not found)
 )
 
-:: ── Clear reports folder (keep the folder itself) ──────────────────────────
+:: ── Clear reports folder (keep the folder itself) ─────────────────────────
 if exist "reports\" (
     del /f /q "reports\*.*" >nul 2>&1
     for /d %%D in ("reports\*") do rd /s /q "%%D" >nul 2>&1
@@ -55,7 +54,10 @@ if exist "reports\" (
     echo [CREATED]  reports\  (was missing)
 )
 
-:: ── Clear temp folder (keep the folder itself) ─────────────────────────────
+:: Ensure .gitkeep exists in reports\
+type nul > "reports\.gitkeep"
+
+:: ── Clear temp folder (keep the folder itself) ────────────────────────────
 if exist "temp\" (
     del /f /q "temp\*.*" >nul 2>&1
     for /d %%D in ("temp\*") do rd /s /q "%%D" >nul 2>&1
@@ -65,11 +67,17 @@ if exist "temp\" (
     echo [CREATED]  temp\  (was missing)
 )
 
+:: Ensure .gitkeep exists in temp\
+type nul > "temp\.gitkeep"
+
 echo.
 echo ============================================================
 echo  Done. Template files preserved:
 echo    STxxxx_Wind load check.xlsx
 echo    schemes_input.xlsx
+echo    reports\.gitkeep
+echo    temp\.gitkeep
 echo ============================================================
 echo.
-pause
+
+endlocal
