@@ -3,8 +3,8 @@ from __future__ import annotations
 from app.integrations.coastal.distance_to_sea_service import get_distance_to_sea_km
 from app.integrations.geocoding.elevation_service import get_elevation_m
 from app.integrations.geocoding.uk_postcode_service import get_site_geo
-from tools.wind_json_builder import build_and_save_scheme_json
-from tools.web.web_automation_toolset import load_json_calculate_get_cez
+from app.integrations.eurocode.uk_json_builder import build_and_save_scheme_json
+from app.integrations.eurocode.eurocode_applied_client import load_json_calculate_get_cez
 
 
 def process_uk_scheme(
