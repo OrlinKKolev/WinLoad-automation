@@ -85,7 +85,7 @@ def process_scheme(df: pd.DataFrame, idx: int) -> dict:
     print(f"[{scheme_id}] JSON saved: {json_path}")
 
     # ── 5. Website automation ──────────────────────────────────────────────
-    pdf_path = REPORTS_DIR / f"scheme_{scheme_id}_wind_result.pdf"
+    pdf_path = REPORTS_DIR / f"scheme_{scheme_id}_EurocodeApplied_Result.pdf"
     cez, vb0 = load_json_calculate_get_cez(
         json_path=json_path,
         os_easting=geo.easting,
