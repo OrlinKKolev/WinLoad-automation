@@ -1,2 +1,15 @@
 data/STxxxx_Wind load check.xlsx
 WinLoad automation.zip
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual/runtime folders
+current version/runtime/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
