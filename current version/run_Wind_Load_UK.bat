@@ -1,15 +1,8 @@
 @echo off
 cd /d "%~dp0"
-echo Starting Wind Automation Pipeline...
+
+echo [Legacy launcher] run_Wind_Load_UK.bat
+echo Redirecting to run_pipeline.bat...
 echo.
 
-python bin/runner.py
-
-echo.
-if %ERRORLEVEL% == 0 (
-    echo Pipeline completed successfully.
-) else (
-    echo Pipeline FAILED. See errors above.
-)
-
-pause
+call "%~dp0run_pipeline.bat"
