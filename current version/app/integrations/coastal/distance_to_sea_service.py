@@ -10,12 +10,71 @@ from playwright.sync_api import sync_playwright
 DOOGAL_DISTANCE_URL = "https://www.doogal.co.uk/DistanceToSea"
 
 
-def _dismiss_cookie_popup(page) -> None:
+def _dismiss_cookie_overlay(page) -> None:
+    """Best-effort cookie consent dismissal. Never raises."""
+    # Try clicking known reject/disagree buttons
+    for selector in [
+        "text=DISAGREE",
+        "text=Disagree",
+        "text=REJECT ALL",
+        "text=Reject All",
+        "text=Reject all",
+        "button[mode='secondary']",
+        ".qc-cmp2-summary-buttons button:first-child",
+    ]:
+        try:
+            page.wait_for_selector(selector, timeout=1500)
+            page.click(selector, timeout=2000)
+            page.wait_for_timeout(500)
+            return
+        except Exception:
+            continue
+
+    # Fallback: nuke all known overlay containers from the DOM
     try:
-        page.wait_for_selector("text=DISAGREE", timeout=1500)
-        page.click("text=DISAGREE")
+        page.evaluate("""
+            [
+                '#qc-cmp2-container',
+                '.qc-cmp2-container',
+                '.qc-cmp-cleanslate',
+                '[data-nosnippet]',
+            ].forEach(sel => {
+                document.querySelectorAll(sel).forEach(el => el.remove());
+            });
+        """)
+        page.wait_for_timeout(300)
     except Exception:
         pass
+
+
+def _click_calculate(page) -> None:
+    """Click the Calculate button, bypassing any remaining overlay."""
+    selector = "input[value='Calculate']"
+
+    # First attempt: force=True bypasses pointer-event interception
+    try:
+        page.click(selector, force=True, timeout=5000)
+        return
+    except Exception:
+        pass
+
+    # Second attempt: trigger via JavaScript onclick directly
+    try:
+        page.evaluate("""
+            const btn = document.querySelector("input[value='Calculate']");
+            if (btn) btn.click();
+        """)
+        return
+    except Exception:
+        pass
+
+    # Final attempt: dispatch a real MouseEvent via JS
+    page.evaluate("""
+        const btn = document.querySelector("input[value='Calculate']");
+        if (btn) {
+            btn.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true}));
+        }
+    """)
 
 
 def _run_doogal(lat: float, lon: float, headless: bool, result: list) -> None:
@@ -23,14 +82,44 @@ def _run_doogal(lat: float, lon: float, headless: bool, result: list) -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless)
         page = browser.new_page()
-        page.goto(DOOGAL_DISTANCE_URL, wait_until="networkidle")
-        _dismiss_cookie_popup(page)
+
+        page.goto(DOOGAL_DISTANCE_URL, wait_until="domcontentloaded", timeout=60000)
+
+        # Give page JS a moment to render
+        page.wait_for_timeout(1500)
+
+        # Dismiss cookie overlay
+        _dismiss_cookie_overlay(page)
+
+        # Fill coordinates
         page.fill("textarea", coord_line)
-        page.click("input[value='Calculate']")
-        page.wait_for_function(
-            f"() => document.body.innerText.includes('{coord_line}')",
-            timeout=15000,
-        )
+        page.wait_for_timeout(300)
+
+        # Nuke overlay again right before click as final safety net
+        try:
+            page.evaluate("""
+                [
+                    '#qc-cmp2-container',
+                    '.qc-cmp2-container',
+                    '.qc-cmp-cleanslate',
+                    '[data-nosnippet]',
+                ].forEach(sel => {
+                    document.querySelectorAll(sel).forEach(el => el.remove());
+                });
+            """)
+        except Exception:
+            pass
+
+        # Click Calculate
+        _click_calculate(page)
+
+        # Wait for results table to appear — more reliable than matching coord string
+        try:
+            page.wait_for_selector("table tbody tr", timeout=20000)
+        except Exception:
+            # Wait for results table to appear — avoids fragile coordinate string matching
+            page.wait_for_selector("table tbody tr td", timeout=20000)
+
         body_text = page.inner_text("body")
         browser.close()
 
